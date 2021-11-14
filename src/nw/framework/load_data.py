@@ -7,7 +7,9 @@
     Affiliation: NEC Labs America
 """
 import numpy as np
-def load_email_eu(data_path, sample_rate):
+from sklearn.preprocessing import MinMaxScaler
+
+def load_graph_data(data_path, sample_rate):
     """ function load_uci_message
     #  [data, n, m] = load_uci_message(sample_rate)
     #  load data set uci_message and preprocess it
@@ -29,10 +31,10 @@ def load_email_eu(data_path, sample_rate):
     edges = np.loadtxt(data_path, dtype=int, comments='%') + 1
 
     # change to undirected graph
-    idx_reverse = np.nonzero(edges[:, 0] - edges[:, 1] > 0)
-    tmp = edges[idx_reverse]
-    tmp[:, [0, 1]] = tmp[:, [1, 0]]
-    edges[idx_reverse] = tmp
+    #idx_reverse = np.nonzero(edges[:, 0] - edges[:, 1] > 0)
+    #tmp = edges[idx_reverse]
+    #tmp[:, [0, 1]] = tmp[:, [1, 0]]
+    #edges[idx_reverse] = tmp
 
     # remove self-loops
     idx_remove_dups = np.nonzero(edges[:, 0] - edges[:, 1] < 0)
@@ -40,27 +42,14 @@ def load_email_eu(data_path, sample_rate):
 
     edges = edges[:, 0:2]
 
-
-    # only keep unique edges
-    edges, ind_ = np.unique(edges, axis=0, return_index=True)
-
-
     step = int(np.floor(1/sample_rate))
     edges = edges[0:len(edges):step, :]
-
-
-    # re-assign id
-    unique_id = np.unique(edges)
-    n = len(unique_id)
-    _, digg = ismember(edges, unique_id)
-
-    data = digg
-    m = len(digg)
-
+    m = len(edges)
+    n = len(np.unique(edges))
     np.random.seed(101)
-    np.random.shuffle(data)
+    np.random.shuffle(edges)
 
-    return data, n, m
+    return edges, n, m
 
 def ismember(a, b_vec):
     """ MATLAB equivalent ismember function """

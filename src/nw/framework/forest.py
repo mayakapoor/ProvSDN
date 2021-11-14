@@ -5,7 +5,7 @@ import numpy as np
 from detectors import LSHiForest
 from datasketch import MinHash
 from sklearn.ensemble import IsolationForest
-from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_auc_score, accuracy_score
 
 def generate_codes(embedding, data):
     src = embedding[data[:, 0] - 1, :]
@@ -13,7 +13,7 @@ def generate_codes(embedding, data):
 
     # the edge encoding
     # refer Section 3.3 Edge Encoding in the KDD paper for details
-    encoding_method = 'WeightedL1'
+    encoding_method = 'Hadamard'
     if encoding_method == 'Average':
         codes = (src + dst) / 2
     elif encoding_method == 'Hadamard':
@@ -37,21 +37,30 @@ def get_forest(embedding, train, k):
     print("\tTraining time:\t", train_time)
     return forest
 
+def predict_forest(forest, embedding, test, labels):
+    codes = generate_codes(embedding, test)
 
-def predict_forest(forest, test, labels):
+    print(len(codes))
 
-    df = pd.DataFrame(test)
+    df = pd.DataFrame(codes)
+
     start_time = time.time()
     res = forest.decision_function(df)
     test_time = time.time()-start_time
+
     score = 0
     ab_score = abs(np.sum(res)/(1e-10 + len(res)))
     try:
         score = roc_auc_score(labels, res)
     except ValueError:
         pass
-
-    print("AUC for forest: " + str(score))
-    print("anomaly detection score: " + str(ab_score))
     print("\tTesting time:\t", test_time)
-    return score, ab_score
+    pred = []
+    i = 0
+    for result in res:
+        pred.append(forest.predict(result, 0.5))
+        print(result)
+        print(labels[i])
+        i = i + 1
+    accuracy = accuracy_score(labels, pred)
+    return score, ab_score, accuracy

@@ -87,6 +87,12 @@ class LSHForest:
 		avg_depths = np.array(avg_depths)
 		return -1.0*avg_depths
 
+	def predict(self, data, threshold):
+		if (abs(data) >= threshold):
+			return 1
+		else:
+			return 0
+
 
 	def get_avg_branch_factor(self):
 		sum = 0.0

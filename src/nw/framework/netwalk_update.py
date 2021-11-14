@@ -59,7 +59,7 @@ class Reservior:
             u, v = edge
 
             # update u's reservior, edges can not be duplicated in the training and updating
-            assert v not in self.reservior[u]
+            #assert v not in self.reservior[u]
 
             self.degree[u] += 1
             indices = np.random.randint(self.degree[u], size=self.reservior_dim)
@@ -67,7 +67,7 @@ class Reservior:
             self.reservior[u][replace_idx] = v
 
             # update v's reservior, edges can not be duplicated in the training and updating
-            assert u not in self.reservior[v]
+            #assert u not in self.reservior[v]
 
             self.degree[v] += 1
             indices = np.random.randint(self.degree[v], size=self.reservior_dim)
@@ -256,6 +256,7 @@ class NetWalk_update:
         self.vertices = None
         self.idx = 0
         self.walk_per_node = walk_per_node
+
 
         if isinstance(path, str):
             self.data = self.__get_data()

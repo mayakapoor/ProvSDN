@@ -1,7 +1,10 @@
 #Untrack folders
-netwalk/src/detectors/__init__.py
-netwalk/src/detectors/__pycache__/*
-netwalk/src/framework/__init__.py
-netwalk/src/framework/__pycache__/*
-netwalk/src/plots/__init__.py
-netwalk/src/plots/__pycache__/*
+__pycache__/*
+src/__init__.py
+src/__pycache__/*
+src/nw/__pycache__/*
+src/nw/detectors/__init__.py
+src/nw/detectors/__pycache__/*
+src/nw/framework/__init__.py
+src/nw/framework/__pycache__/*
+src/nw/__init__.py

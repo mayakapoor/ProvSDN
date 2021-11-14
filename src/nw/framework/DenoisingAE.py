@@ -37,7 +37,7 @@ def autoencoder(data, corrupt_prob, dimensions, beta=0.01, rho = 0.4, activation
     # init_glorot_normal = tf.glorot_normal_initializer()
 
 
-    # x = tf.placeholder(tf.float32, [None, dimensions[0]], name='x')
+    #x = tf.placeholder(tf.float32, [None, dimensions[0]], name='x')
     x = tf.cast(data, tf.float32)
 
     current_input = corrupt(x) * corrupt_prob + x * (1 - corrupt_prob)

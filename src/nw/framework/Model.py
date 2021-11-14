@@ -8,7 +8,7 @@
 """
 from scipy.sparse import csgraph
 import numpy as np
-from framework import DenoisingAE
+from nw.framework import DenoisingAE
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
@@ -72,7 +72,6 @@ class Model:
             print('Need training first!')
             return None
         current_input = data.astype(np.float32)  # ((scipy.sparse.coo_matrix)(data)).todense().astype(np.float32)
-
         with self.sess.as_default():
             code = tf.transpose(self.encoder_out)
             res = code.eval(feed_dict={self.data: current_input, self.corrupt_prob: self.corrupt_prob_value})
