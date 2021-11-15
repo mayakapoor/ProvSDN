@@ -11,7 +11,7 @@ n = 0                               # number of nodes
 netwalk = None                      # ref to netwalk obj
 
 #static parameters
-hidden_size = 19                   # number of latent dimensions to learn
+hidden_size = 10                   # number of latent dimensions to learn
 activation = tf.nn.sigmoid
 dimension = [n, hidden_size]
 rho = 0.5                           # sparsity ratio
@@ -88,7 +88,6 @@ def generate_netwalk_input(data, path):
 
     nodes = np.concatenate([data['src'], data['dst']])
     unodes = np.unique(nodes)
-    print(unodes)
     nodelist = unodes.tolist()
 
     for src, dst in zip(data['src'], data['dst']):
@@ -115,6 +114,12 @@ def get_embedding(model, data):
     res = model.feedforward_autoencoder(node_onehot)
     return res
 
-def get_snapshot(data):
+def get_snapshot(df, i, snap_size, stop):
+    labels = []
+    for j in range(snap_size):
+        labels.append(df.at[i, 'label'])
+        i = i + 1
+        if i == stop:
+            break
     if (netwalk.hasNext()):
-        return netwalk.nextOnehotWalks()
+        return netwalk.nextOnehotWalks(), labels

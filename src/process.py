@@ -10,6 +10,8 @@ def import_dataset():
 
     train, benign_test = train_test_split(df_benign)
     test = pd.concat([df_attack, benign_test])
-    test.sample(frac=1)
+    test = test.sample(frac=1).reset_index(drop=True)
 
     return train, test
+
+#def get_statistical_embedding(data, dimension):
