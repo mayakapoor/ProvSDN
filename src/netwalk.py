@@ -43,7 +43,6 @@ def remove_self_loops(edges):
 def initialize_netwalk(train_path, test_path):
     train_edges = np.loadtxt(train_path, dtype=int, comments='%') + 1
     test_edges = np.loadtxt(test_path, dtype=int, comments='%') + 1
-
     uniq = set()
     for edge in train_edges:
         for node in edge:
@@ -72,7 +71,7 @@ def initialize_netwalk(train_path, test_path):
 
 # learning initial embeddings for training edges
     ini_data = netwalk.getInitWalk()
-    return train_edges, test_edges, ini_data
+    return test_edges, ini_data
 
 def hasNext():
     global netwalk
@@ -123,3 +122,21 @@ def get_snapshot(df, i, snap_size, stop):
             break
     if (netwalk.hasNext()):
         return netwalk.nextOnehotWalks(), labels
+
+def generate_codes(embedding, data):
+    src = embedding[data[:, 0] - 1, :]
+    dst = embedding[data[:, 1] - 1, :]
+
+    # the edge encoding
+    # refer Section 3.3 Edge Encoding in the KDD paper for details
+    encoding_method = 'WeightedL1'
+    if encoding_method == 'Average':
+        codes = (src + dst) / 2
+    elif encoding_method == 'Hadamard':
+        codes = np.multiply(src, dst)
+    elif encoding_method == 'WeightedL1':
+        codes = abs(src - dst)
+    elif encoding_method == 'WeightedL2':
+        codes = (src - dst) ** 2
+
+    return codes
