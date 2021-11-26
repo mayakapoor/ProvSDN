@@ -7,13 +7,13 @@ from nw.framework.netwalk_update import NetWalk_update
 
 
 # dynamic parameters
-n = 0                               # number of nodes
 netwalk = None                      # ref to netwalk obj
+dimension = []                      # tensor size
 
 #static parameters
-hidden_size = 10                   # number of latent dimensions to learn
+hidden_size = 20                   # number of latent dimensions to learn
 activation = tf.nn.sigmoid
-dimension = [n, hidden_size]
+
 rho = 0.5                           # sparsity ratio
 lamb = 0.0017                       # weight decay
 beta = 1                            # sparsity weight
@@ -40,25 +40,33 @@ def remove_self_loops(edges):
     np.random.seed(101)
     np.random.shuffle(edges)
 
-def initialize_netwalk(train_path, test_path):
-    train_edges = np.loadtxt(train_path, dtype=int, comments='%') + 1
-    test_edges = np.loadtxt(test_path, dtype=int, comments='%') + 1
-    uniq = set()
-    for edge in train_edges:
-        for node in edge:
-            uniq.add(node)
-    for edge in test_edges:
-        for node in edge:
-            uniq.add(node)
+def initialize_netwalk(train_src, train_dst, test_src, test_dst, n):
 
-    global n
+    train_edges = []
+    for src, dst in zip(train_src, train_dst):
+        sublist = []
+        sublist.append(src)
+        sublist.append(dst)
+        train_edges.append(sublist)
+    train_edges = np.array(train_edges)
+
+    test_edges = []
+    for src, dst in zip(test_src, test_dst):
+        sublist = []
+        sublist.append(src)
+        sublist.append(dst)
+        test_edges.append(sublist)
+    test_edges = np.array(test_edges)
+
+    train_edges = train_edges[:, 0:2]
+    test_edges = test_edges[:, 0:2]
+
     global dimension
     global hidden_size
-    n = len(uniq)
     dimension = [n, hidden_size]
 
-    remove_self_loops(train_edges)
-    remove_self_loops(test_edges)
+    #remove_self_loops(train_edges)
+    #remove_self_loops(test_edges)
 
     data_zip = []
     data_zip.append(test_edges)
@@ -93,12 +101,12 @@ def generate_netwalk_input(data, path):
         entry = str(nodelist.index(src)) + " " + str(nodelist.index(dst)) + "\n"
         data_file.write(entry)
 
-def get_model():
+def get_model(n):
     embModel = MD.Model(activation, dimension, walk_len, n, gama, lamb, beta, rho,
                         epoch, batch_size, learning_rate, optimizer, corrupt_prob)
     return embModel
 
-def get_embedding(model, data):
+def get_embedding(model, data, n):
     """
         function getEmbedding(model, data, n)
         #  the function feed ''data'' which is a list of walks
@@ -107,11 +115,16 @@ def get_embedding(model, data):
     """
     # batch optimizing to fit the model
     model.fit(data)
+    global netwalk
 
     # Retrieve the embeddings
     node_onehot = np.eye(n)
     res = model.feedforward_autoencoder(node_onehot)
-    return res
+
+    #save the embeddings into a reference in netwalk
+    for i in range(len(netwalk.vertices)):
+        netwalk.vertices[i] = res[i]
+    return netwalk.vertices
 
 def get_snapshot(df, i, snap_size, stop):
     labels = []
@@ -122,21 +135,3 @@ def get_snapshot(df, i, snap_size, stop):
             break
     if (netwalk.hasNext()):
         return netwalk.nextOnehotWalks(), labels
-
-def generate_codes(embedding, data):
-    src = embedding[data[:, 0] - 1, :]
-    dst = embedding[data[:, 1] - 1, :]
-
-    # the edge encoding
-    # refer Section 3.3 Edge Encoding in the KDD paper for details
-    encoding_method = 'WeightedL1'
-    if encoding_method == 'Average':
-        codes = (src + dst) / 2
-    elif encoding_method == 'Hadamard':
-        codes = np.multiply(src, dst)
-    elif encoding_method == 'WeightedL1':
-        codes = abs(src - dst)
-    elif encoding_method == 'WeightedL2':
-        codes = (src - dst) ** 2
-
-    return codes

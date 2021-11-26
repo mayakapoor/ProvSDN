@@ -253,7 +253,7 @@ class NetWalk_update:
         self.walk_len = walk_len
         self.init_percent = init_percent
         self.snap = snap
-        self.vertices = None
+        self.vertices = {}
         self.idx = 0
         self.walk_per_node = walk_per_node
 
@@ -261,6 +261,7 @@ class NetWalk_update:
         if isinstance(path, str):
             self.data = self.__get_data()
         else:
+
             test = path[0][:, 0:2]
             train = path[1]
             self.data = self.__get_data_mat(test, train)
@@ -277,7 +278,7 @@ class NetWalk_update:
         :return: initial walk list for training and list of walk lists in each upcoming snapshot
         """
         edges = np.concatenate((train, test), axis=0)
-        self.vertices = np.unique(edges)
+        self.vertices = dict.fromkeys(np.unique(edges), None)
         init_edges = train
         print("total edges: %d, initial edges: %d; total vertices: %d"
               % (len(edges), len(init_edges), len(self.vertices)))
@@ -382,7 +383,7 @@ class NetWalk_update:
         :param walks: walk list
         :return: one-hot walk list
         """
-        walk_mat = np.array(walks, dtype=int) - 1
+        walk_mat = np.array(walks, dtype=int)
         rows = walk_mat.flatten()
         cols = np.array(range(len(rows)))
         data = np.array([1] * (len(rows)))

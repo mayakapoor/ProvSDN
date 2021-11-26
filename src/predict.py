@@ -9,50 +9,50 @@ from skmultiflow.trees import HoeffdingTreeClassifier
 
 from math import sqrt
 
+import dglearn.model as dglearn
+
 import netwalk as nw
 import numpy as np
 import process
 
 snap = 100                          # number of edges in each snapshot
-k = 100                             # number of forests
 
-train, test = process.import_dataset()
+train, test, n = process.import_dataset()
 
-nw.generate_netwalk_input(train, "output/train.txt")
-nw.generate_netwalk_input(test, "output/test.txt")
+# STEP 1: generate initial node embedding for training graph and prepare
+#         the data stream for testing.
+#         This prepares the walks for test edges as well.
+stream, ini_data = nw.initialize_netwalk(train['src_id'], train['dst_id'], test['src_id'], test['dst_id'], n)
+embModel = nw.get_model(n)
+embedding = nw.get_embedding(embModel, ini_data, n)
 
-stream, ini_data = nw.initialize_netwalk("output/train.txt", "output/test.txt")
-embModel = nw.get_model()
-#forest = isof.initialize_forest(train)
-print(train)
-embedding = nw.get_embedding(embModel, ini_data)
-codes = nw.generate_codes(embedding, ini_data)
-print(codes)
+# STEP 2: embed the embeddings into the edge data by replacing the src/dst node with
+#         their learned hidden representations.
+process.embed_embeddings(train, embedding)
 
-ht = HoeffdingTreeClassifier()
-y_true = np.zeros(len(codes))
-ht = ht.partial_fit(codes, y_true)
-
+# STEP 3: build the DGL graph and train it
+G = dglearn.initialize_dgl(train)
 y_pred = np.zeros(len(test))
 y_true = np.zeros(len(test))
 
 snapshotNum = 0
 correct_cnt = 0
 
+
+
 while(nw.hasNext()):
     snapshot, labels = nw.get_snapshot(test, snapshotNum*snap, snap, len(test))
-    embedding = nw.get_embedding(embModel, snapshot)
-    print(snapshot)
-    codes = nw.generate_codes(embedding, snapshot)
-    y_pred = ht.predict(snapshot)
+    embedding = nw.get_embedding(embModel, snapshot, n)
+
+    y_pred = arf.predict(embedding)
+    arf.partial_fit(embedding, labels)
 
     for j in range(len(snapshot)):
         if labels[j] == y_pred[j]:
             correct_cnt = correct_cnt + 1
 
-    ht.partial_fit(codes, labels)
     snapshotNum = snapshotNum + 1
 
 # Display results
 print('{} samples analyzed.'.format(snapshotNum))
-print('Hoeffding Tree accuracy: {}'.format(correct_cnt / len(test)))
+print('Adaptive Random Forest Regressor accuracy: {}'.format(correct_cnt / len(test)))
