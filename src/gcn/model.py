@@ -5,7 +5,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dgl.nn import GraphConv
-from predictors.predictors import *
 
 class GCN(nn.Module):
     def __init__(self, in_feats, h_feats, n_classes, n_layers):
