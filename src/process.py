@@ -79,9 +79,9 @@ def import_dataset():
     df_attack = df[df['label'] == 1]
 
     train, benign_test = train_test_split(df_benign)
-    train = train.reset_index(drop=True)
+    train = train.sort_values(by='dt').reset_index(drop=True)
     test = pd.concat([df_attack, benign_test])
-    test = test.sample(frac=1).reset_index(drop=True)
+    test = test.sort_values(by='dt').reset_index(drop=True)
 
     print("Number of benign training edges: " + str(len(train)))
     print("Number of attack testing edges: " + str(len(df_attack)))
@@ -174,3 +174,16 @@ def embed_embeddings(df, embedding):
     df["dst_embedding"] = dst_embedding
     print(df)
     return df
+
+def extract_edge_features(data):
+    return data[['pktcount', 'bytecount', 'dur', 'packetins', 'pktperflow', 'byteperflow', 'pktrate', 'pktcount', 'tx_bytes', 'rx_bytes', 'tx_kbps', 'rx_kbps', 'tot_kbps']]
+
+def get_snapshot_labels(df, i, snap_size):
+    labels = []
+    global netwalk
+    for j in range(snap_size):
+        labels.append(df.at[i, 'label'])
+        i = i + 1
+        if i == len(df):
+            break
+    return labels

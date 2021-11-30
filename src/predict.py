@@ -4,55 +4,50 @@ from sklearn.metrics import precision_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import fbeta_score
 
-from skmultiflow.meta import AdaptiveRandomForestRegressor
-from skmultiflow.trees import HoeffdingTreeClassifier
+import nw.model as NetWalk
+import gcn.model as GCN
+import sage.model as SAGE
 
-from math import sqrt
-
-import dglearn.model as dglearn
-
-import netwalk as nw
-import numpy as np
 import process
+import model
+import torch
+import numpy as np
 
-snap = 100                          # number of edges in each snapshot
+snap_size = 100               # number of edges in each snapshot
+n_hidden  = 10                # number of hidden representations
+n_out     = 2                 # number of classes
+encoding_method = 'Hadamard'  # refer Section 3.3 Edge Encoding in the Netwalk KDD paper
+embedder = 'GCN'              # embedding models: NetWalk, GCN, SAGE, or Spectral
+optimizer = 'adam'   
+learning_rate = 0.1
+classifier = None             # classifiers:
+n_layers = 2                  # 1D or 2D GNN
+
 
 train, test, n = process.import_dataset()
-
-# STEP 1: generate initial node embedding for training graph and prepare
-#         the data stream for testing.
-#         This prepares the walks for test edges as well.
-stream, ini_data = nw.initialize_netwalk(train['src_id'], train['dst_id'], test['src_id'], test['dst_id'], n)
-embModel = nw.get_model(n)
-embedding = nw.get_embedding(embModel, ini_data, n)
-
-# STEP 2: embed the embeddings into the edge data by replacing the src/dst node with
-#         their learned hidden representations.
-process.embed_embeddings(train, embedding)
-
-# STEP 3: build the DGL graph and train it
-G = dglearn.initialize_dgl(train)
-y_pred = np.zeros(len(test))
-y_true = np.zeros(len(test))
+mod = model.Model(n, n_hidden, n_out, embedder, encoding_method, n_layers, optimizer, learning_rate, train, test)
+mod.train()
 
 snapshotNum = 0
-correct_cnt = 0
+snapshot = test.iloc[:snap_size]
+test = test.iloc[snap_size:]
 
-
-
-while(nw.hasNext()):
-    snapshot, labels = nw.get_snapshot(test, snapshotNum*snap, snap, len(test))
-    embedding = nw.get_embedding(embModel, snapshot, n)
-
-    y_pred = arf.predict(embedding)
-    arf.partial_fit(embedding, labels)
-
-    for j in range(len(snapshot)):
-        if labels[j] == y_pred[j]:
-            correct_cnt = correct_cnt + 1
-
+while len(snapshot) == snap_size:
+    snapshot = test.iloc[:snap_size]
+    test = test.iloc[snap_size:]
     snapshotNum = snapshotNum + 1
 
-# Display results
-print('{} samples analyzed.'.format(snapshotNum))
-print('Adaptive Random Forest Regressor accuracy: {}'.format(correct_cnt / len(test)))
+
+
+# Encode the src/dst embeddings together using Hadamard
+#NW_codes = helper.edge_encoder(train, NWembedding, encoding_method)
+#SAGE_codes = helper.edge_encoder(train, SAGEembedding, encoding_method)
+#GCN_codes = helper.edge_encoder(train, GCNembedding, encoding_method)
+
+# cut x number of edges from testing.
+# update the representation of the nodes (?)
+# feed edge features plus embedding to adaptive isolation forest.
+
+
+#Next, do the classification for each one. Need to reformat NW to work like SAGE/GCN. Try to
+# get SAGE/GCN working first though so we know what we are doing.

@@ -1,10 +1,14 @@
 #Untrack folders
 __pycache__/*
+.DS_Store
+__init__.py
 src/__init__.py
 src/__pycache__/*
 src/nw/__pycache__/*
-src/nw/detectors/__init__.py
-src/nw/detectors/__pycache__/*
+src/nw/__init__.py
 src/nw/framework/__init__.py
 src/nw/framework/__pycache__/*
-src/nw/__init__.py
+src/gcn/__pycache__/*
+src/gcn/__init__.py
+src/sage/__pycache__/*
+src/sage/__init__.py
