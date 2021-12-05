@@ -16,7 +16,7 @@ class SAGE(nn.Module):
         self.n_hidden = h_feats
         self.n_classes = n_classes
         self.n_layers = n_layers
-        self.layer = SAGEConv(in_feats=h_feats, out_feats=h_feats, aggregator_type='pool')
+        self.layer = SAGEConv(in_feats=h_feats, out_feats=h_feats, aggregator_type='mean')
 
     def node_feat(self):
         node_feat = torch.ones(self.n_nodes, self.n_hidden)
@@ -29,4 +29,4 @@ class SAGE(nn.Module):
         while (l > 1):
             h = F.relu(self.layer(g, h))
             l = l - 1
-        return h
+        return self.layer(g, h)

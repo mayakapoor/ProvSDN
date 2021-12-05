@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import torch
+
 from sklearn.model_selection import train_test_split
 
 def import_dataset():
@@ -175,15 +177,8 @@ def embed_embeddings(df, embedding):
     print(df)
     return df
 
-def extract_edge_features(data):
-    return data[['pktcount', 'bytecount', 'dur', 'packetins', 'pktperflow', 'byteperflow', 'pktrate', 'pktcount', 'tx_bytes', 'rx_bytes', 'tx_kbps', 'rx_kbps', 'tot_kbps']]
-
-def get_snapshot_labels(df, i, snap_size):
-    labels = []
-    global netwalk
-    for j in range(snap_size):
-        labels.append(df.at[i, 'label'])
-        i = i + 1
-        if i == len(df):
-            break
-    return labels
+def edge_feat(data, n):
+    feats = data[['pktcount', 'bytecount', 'dur', 'packetins', 'pktperflow', 'byteperflow', 'pktrate', 'pktcount', 'tx_bytes', 'rx_bytes', 'tx_kbps', 'rx_kbps', 'tot_kbps']]
+    #for i in range(n):
+    #    feats.loc[len(feats)] = 0
+    return torch.tensor(feats.values).float()

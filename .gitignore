@@ -12,3 +12,11 @@ src/gcn/__pycache__/*
 src/gcn/__init__.py
 src/sage/__pycache__/*
 src/sage/__init__.py
+src/cheb/__pycache__/*
+src/cheb/__init__.py
+src/edgeconv/__pycache__/*
+src/edgeconv/__init__.py
+src/gat/__pycache__/*
+src/gat/__init__.py
+src/rahmen/__pycache__/*
+src/rahmen/__init__.py

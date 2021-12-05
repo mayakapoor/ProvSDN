@@ -4,12 +4,12 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from dgl.nn import GraphConv
+from dgl.nn import ChebConv
 
-class GCN(nn.Module):
+class Cheb(nn.Module):
     def __init__(self, in_feats, h_feats, n_classes, n_layers):
-        super(GCN, self).__init__()
-        self.layer = GraphConv(h_feats, h_feats, weight=True, bias=True)
+        super(Cheb, self).__init__()
+        self.layer = ChebConv(h_feats, h_feats, 2)
         self.n_nodes = in_feats
         self.n_classes = n_classes
         self.n_hidden = h_feats
