@@ -8,14 +8,14 @@
 """
 from scipy.sparse import csgraph
 import numpy as np
-from nw.framework import DenoisingAE
+from . import DenoisingAE
 #import tensorflow as tf
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import random
 from tqdm import tqdm
 
-class Model:
+class NWModel:
     def __init__(self, activation, dimension, walk_len, nodeNum, gama, lamb,
                  beta, rho, epoch, batch_size, learning_rate, optimizer_type, corrupt_prob):
 

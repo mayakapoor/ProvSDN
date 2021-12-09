@@ -10,18 +10,17 @@ import torch
 import numpy as np
 
 snap_size = 100               # number of edges in each snapshot
-n_hidden  = 10                # number of hidden representations
-n_out     = 2                 # number of classes
+n_hidden  = 15                # number of hidden representations
+n_out     = 10                # number of output features
 encoding_method = 'Hadamard'  # refer Section 3.3 Edge Encoding in the Netwalk KDD paper
 embedder = 'SAGE'             # embedding models: NetWalk, GCN, SAGE, Rahmen, or Spectral
 optimizer = 'adam'            # optimizers:
 learning_rate = 0.01          # learning rate
 n_layers = 2                  # number of layers for network
-n_epochs = 20                  # number of training epochs
-use_edges = False
+n_epochs = 20                 # number of training epochs
 
 train, test, n = process.import_dataset()
-mod = model.Model(n, n_hidden, n_out, embedder, encoding_method, n_layers, optimizer, learning_rate, n_epochs, use_edges, train, test)
+mod = model.Model(n, n_hidden, n_out, embedder, encoding_method, n_layers, optimizer, learning_rate, n_epochs, train, test)
 mod.train()
 
 

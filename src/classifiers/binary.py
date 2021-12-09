@@ -14,6 +14,7 @@ class BinaryClassifier(nn.Module):
             nn.Linear(self.h_feat, 1),
             nn.Sigmoid()
         )
+        self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
         return self.classifier(x)

@@ -1,13 +1,10 @@
-import nw.model as NetWalk
-import gcn.model as GCN
-import sage.model as SAGE
-import cheb.model as Cheb
-import rahmen.model as Rahmen
-import edgeconv.model as Edge
+import models.nw.model as NetWalk
+import models.gcn.model as GCN
+import models.sage.model as SAGE
+import models.cheb.model as Cheb
 
 import process
 
-from edge import EdgeLayer
 from classifiers.binary import BinaryClassifier
 from dgl.nn.pytorch import SumPooling
 
@@ -18,6 +15,9 @@ import torch.nn.functional as F
 import numpy as np
 
 def initialize_dgl(data):
+    """
+    Returns a DGL graph from pandas dataframe with edge features added.
+    """
     G = dgl.DGLGraph()
 
     #index nodes
@@ -27,16 +27,21 @@ def initialize_dgl(data):
         uniq.add(dst)
 
     G.add_edges(data["src_id"].to_numpy(), data["dst_id"].to_numpy())
+    G.edata['h'] = process.edge_feat(data)
     G = dgl.add_self_loop(G)
     return G, data
 
+
 class Model(nn.Module):
+    """
+    The plug-and-play model which supports the different kinds of embeddings
+    """
     def __init__(self, in_feat, h_feat, out_feat, embModel, encoding_method,
-                 n_layers, optimizer_type, learning_rate, num_epochs, add_edge_features, train, test):
+                 n_layers, optimizer_type, learning_rate, num_epochs, train, test):
         super(Model, self).__init__()
         self.in_feat = in_feat
         self.h_feat = h_feat
-        self.n_classes = out_feat
+        self.out_feat = out_feat
         self.embModel = embModel
         self.n_layers = n_layers
         self.train_data = train
@@ -45,15 +50,20 @@ class Model(nn.Module):
         self.learning_rate = learning_rate
         self.num_epochs = num_epochs
         self.encoding_method = encoding_method
-        self.G, self.train_data = initialize_dgl(self.train_data)
-        #if add_edge_features:
-        #    self.pred = BinaryClassifier(h_feat + 13)
-        #else:
-        self.pred = BinaryClassifier(h_feat)
-        if add_edge_features:
-            self.edge_layer = EdgeLayer(len(train) + in_feat, h_feat, encoding_method)
-        self.add_edge_features = add_edge_features
 
+        self.G, self.train_data = initialize_dgl(self.train_data)
+
+        """
+        NetWalk does not use DGL yet, so the number of hidden features is different!
+        """
+        if self.embModel != "NetWalk":
+            self.pred = BinaryClassifier(out_feat + 6)
+        else:
+            self.pred = BinaryClassifier(h_feat + 6)
+
+        """
+        Optimizer
+        """
         if self.optimizer_type == "adagrad":
             self.optimizer = torch.optim.Adagrad(self.parameters(), lr=self.learning_rate,
                                               initial_accumulator_value=1e-8)
@@ -66,54 +76,48 @@ class Model(nn.Module):
         else:
             self.optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate, betas=(0.9, 0.999), eps=1e-8)
 
+        """
+        One of the supported embedding models
+        """
         if self.embModel == "SAGE":
             self.embedder = SAGE.SAGE(in_feat, h_feat, out_feat, n_layers)
-            self.embedding = self.embedder(self.G, self.embedder.node_feat())
 
-        # netwalk uses its own graph structure, not DGL
-        # also trains with feedforward autoencoder
         elif self.embModel == "NetWalk":
             self.embedder = NetWalk.NetWalk(train, test, in_feat, h_feat, out_feat)
-            self.embedding = self.embedder(self.embedder.node_feat())
 
         elif self.embModel == "GCN":
             self.embedder = GCN.GCN(in_feat, h_feat, out_feat, n_layers)
-            self.embedding = self.embedder(self.G, self.embedder.node_feat())
 
         elif self.embModel == "Spectral":
             self.embedder = Cheb.Cheb(in_feat, h_feat, out_feat, n_layers)
-            self.embedding = self.embedder(self.G, self.embedder.node_feat())
 
-        elif self.embModel == "EdgeConv":
-            self.embedder = Edge.Edge(in_feat, h_feat, out_feat, n_layers)
-            self.embedding = self.embedder(self.G, self.embedder.node_feat())
+        #elif self.embModel == "EdgeConv":
+        #    self.embedder = Edge.Edge(in_feat, h_feat, out_feat, n_layers)
+        #    self.embedding = self.embedder(self.G, self.embedder.node_feat())
 
-        elif self.embModel == "Rahmen":
-            self.embedder = Rahmen.Rahmen(self.G.edges(), in_feat, h_feat, out_feat, n_layers)
-            self.embedding = self.embedder(self.G, self.embedder.node_feat())
+        #elif self.embModel == "Rahmen":
+        #    self.embedder = Rahmen.Rahmen(self.G.edges(), in_feat, h_feat, out_feat, n_layers)
+        #    self.embedding = self.embedder(self.G, self.embedder.node_feat())
 
         else:
             raise Exception("Unsupported embedding Model configured.")
 
+        """
+        Again, the NetWalk model is a bit different and uses its own graph
+        """
+        if self.embModel != "NetWalk":
+            self.embedding = self.embedder(self.G)
+        else:
+            self.embedding = self.embedder(self.embedder.node_feat())
+
+    """
+    Training loop applying gradient descent
+    """
     def train(self):
         y_true = torch.from_numpy(self.train_data.loc[:,'label'].to_numpy()).float()
         for epoch in range(self.num_epochs):
-            #X = self.edge_layer(self.G, self.embedding, process.edge_feat(self.train_data, self.in_feat))
-            #if self.add_edge_features:
-            #    X = process.edge_feat(self.train_data, self.in_feat, self.edge_encoder(self.train_data))
-            #else:
-            X = torch.from_numpy(self.edge_encoder(self.train_data))
+            X = torch.from_numpy(self.edge_encoder(self.train_data)).float()
             y_pred = self.pred(X)
-
-            num_true = int(sum(y_true))
-            sorted_pred = sorted(y_pred)
-            threshold = sorted_pred[-num_true]
-
-            tmp = torch.Tensor([
-                1 if pred > threshold else 0
-                for pred in y_pred
-            ]).float()
-
             self.optimizer.zero_grad()
             lossfunc = nn.BCELoss()
             loss = lossfunc(y_pred, torch.unsqueeze(y_true, 1))
@@ -121,15 +125,19 @@ class Model(nn.Module):
             self.optimizer.step()
             print('Epoch {}, loss {:.4f}'.format(epoch + 1, loss.item()))
 
+    """
+    Classifier model forward call
+    """
     def forward(self, test_data):
         G, test_data = initialize_dgl(test_data)
-        #X = self.edge_layer(G, self.embedding, process.edge_feat(test_data, self.in_feat))
-        #if self.add_edge_features:
-        #    X = process.edge_feat(test_data, self.in_feat, self.edge_encoder(test_data))
-        #else:
-        X = torch.from_numpy(self.edge_encoder(test_data))
+        X = torch.from_numpy(self.edge_encoder(test_data)).float()
         return self.pred(X)
 
+    """
+    Encodes the src and dst node embeddings together as described
+    in the NetWalk paper to make a combined representation.
+    Also adds the edge features for classifier to include in prediction.
+    """
     def edge_encoder(self, data):
         emb = self.embedding.detach().numpy()
 
@@ -144,4 +152,7 @@ class Model(nn.Module):
             codes = abs(src - dst)
         elif self.encoding_method == 'WeightedL2':
             codes = (src - dst) ** 2
-        return codes
+
+        feats = data[['pktperflow', 'byteperflow', 'tot_dur', 'flows', 'pktrate', 'tot_kbps']].to_numpy()
+        combined_feats = np.concatenate((codes, feats), axis=1)
+        return combined_feats

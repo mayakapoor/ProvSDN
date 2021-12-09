@@ -1,9 +1,9 @@
-from nw.framework.imports import *
-import nw.framework.Model as MD
+from . import NWModel as MD
+from . import netwalk_update
 import warnings
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
-from nw.framework.netwalk_update import NetWalk_update
+
 
 import torch
 import torch.nn as nn
@@ -22,13 +22,13 @@ lamb = 0.0017                       # weight decay
 beta = 1                            # sparsity weight
 gama = 340                          # autoencoder weight
 walk_len = 3                        # length of rand walks from each node
-epoch = 30                          # number of epoch for optimizing, could be larger
+epoch = 40                          # number of epoch for optimizing, could be larger
 batch_size = 40                     # should be smaller or equal to args.number_walks*n
 learning_rate = 0.01                # learning rate, for adam, using 0.01, for rmsprop using 0.1
 optimizer = "adam"                  #"rmsprop"#"gd"#"rmsprop" #"""gd"#""lbfgs"
 corrupt_prob = [0]                  # corrupt probability, for denoising AE
 ini_graph_percent = 0.01            # percent of edges in the initial graph
-number_walks = 20                   # number of random walks to start at each node
+number_walks = 5                   # number of random walks to start at each node
 snap = 100                          # number of edges in each snapshot
 
 
@@ -70,7 +70,7 @@ class NetWalk(nn.Module):
 
     # generating initial training walks
         global netwalk
-        netwalk = NetWalk_update(data_zip, walk_per_node=number_walks, walk_len=walk_len,
+        netwalk = netwalk_update.NetWalk_update(data_zip, walk_per_node=number_walks, walk_len=walk_len,
                                 init_percent=ini_graph_percent, snap=snap)
 
         self.model = MD.Model(activation, dimension, walk_len, n, gama, lamb, beta, rho,
@@ -88,18 +88,3 @@ class NetWalk(nn.Module):
         res = self.model.feedforward_autoencoder(node_onehot)
         embedding = torch.stack([(torch.from_numpy(res[i])) for i in range(len(res))])
         return embedding
-
-def hasNext():
-    global netwalk
-    return netwalk.hasNext()
-
-def get_snapshot(df, i, snap_size):
-    labels = []
-    global netwalk
-    for j in range(snap_size):
-        labels.append(df.at[i, 'label'])
-        i = i + 1
-        if i == len(df):
-            break
-    if (netwalk.hasNext()):
-        return netwalk.nextOnehotWalks(), labels

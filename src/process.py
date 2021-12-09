@@ -3,63 +3,18 @@ import numpy as np
 import torch
 
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import MinMaxScaler
 
 def import_dataset():
+    """
+    Transforms data into PD frames and normalizes NaN values
+    """
     df = pd.read_csv("data/dataset_sdn.csv")
 
     #normalization of cols
-    min = df.pktcount.min()
-    max = df.pktcount.max()
-    df['pktcount'] = (df.pktcount-min)/(max-min)
-
-    min = df.bytecount.min()
-    max = df.bytecount.max()
-    df['bytecount'] = (df.bytecount-min)/(max-min)
-
-    min = df.dur.min()
-    max = df.dur.max()
-    df['dur'] = (df.dur-min)/(max-min)
-
-    min = df.packetins.min()
-    max = df.packetins.max()
-    df['packetins'] = (df.packetins-min)/(max-min)
-
-    min = df.pktperflow.min()
-    max = df.pktperflow.max()
-    df['pktperflow'] = (df.pktperflow-min)/(max-min)
-
-    min = df.byteperflow.min()
-    max = df.byteperflow.max()
-    df['byteperflow'] = (df.byteperflow-min)/(max-min)
-
-    min = df.pktrate.min()
-    max = df.pktrate.max()
-    df['pktrate'] = (df.pktrate-min)/(max-min)
-
-    min = df.pktcount.min()
-    max = df.pktcount.max()
-    df['pktcount'] = (df.pktcount-min)/(max-min)
-
-    min = df.tx_bytes.min()
-    max = df.tx_bytes.max()
-    df['tx_bytes'] = (df.tx_bytes-min)/(max-min)
-
-    min = df.rx_bytes.min()
-    max = df.rx_bytes.max()
-    df['rx_bytes'] = (df.rx_bytes-min)/(max-min)
-
-    min = df.tx_kbps.min()
-    max = df.tx_kbps.max()
-    df['tx_kbps'] = (df.tx_kbps-min)/(max-min)
-
-    min = df.rx_kbps.min()
-    max = df.rx_kbps.max()
-    df['rx_kbps'] = (df.rx_kbps-min)/(max-min)
-
-    min = df.tot_kbps.min()
-    max = df.tot_kbps.max()
-    df['tot_kbps'] = (df.tot_kbps-min)/(max-min)
-
+    min_max_scaler = MinMaxScaler()
+    df[["flows", "tot_dur", "pktperflow", "byteperflow", "pktrate", "tot_kbps"]] = min_max_scaler.fit_transform(df[["flows", "tot_dur", "pktperflow", "byteperflow", "pktrate", "tot_kbps"]])
+    df = df.fillna(0)
     #index nodes
     uniq = set()
     for src, dst in zip(df['src'], df['dst']):
@@ -95,6 +50,9 @@ def import_dataset():
     return train, test, len(uniq)
 
 def make_networkx():
+    """
+    Make NetworkX graph from SDN data (no features)
+    """
     my_data = np.genfromtxt('data/dataset_sdn.csv', delimiter=',',skip_header=1,dtype=None, encoding='UTF-8')
     my_data.sort()
 
@@ -135,6 +93,9 @@ def make_networkx():
     print("Total number of attack graphs: " + str(len(attack_graphs)))
 
 def make_txt_graph():
+    """
+    Make text list representation of the graph, used by NetWalk
+    """
     print("Beginning data pre-processing...\n")
 
     my_data = np.genfromtxt('data/dataset_sdn.csv', delimiter=',',skip_header=1,dtype=None, encoding='UTF-8')
@@ -167,6 +128,9 @@ def make_txt_graph():
 make_txt_graph()
 
 def embed_embeddings(df, embedding):
+    """
+    Supports putting the embedding into the test or train data frame
+    """
     src_embedding = []
     dst_embedding = []
     for src, dst in zip(df["src_id"], df["dst_id"]):
@@ -177,8 +141,6 @@ def embed_embeddings(df, embedding):
     print(df)
     return df
 
-def edge_feat(data, n):
-    feats = data[['pktcount', 'bytecount', 'dur', 'packetins', 'pktperflow', 'byteperflow', 'pktrate', 'pktcount', 'tx_bytes', 'rx_bytes', 'tx_kbps', 'rx_kbps', 'tot_kbps']]
-    #for i in range(n):
-    #    feats.loc[len(feats)] = 0
+def edge_feat(data):
+    feats = data[['pktperflow', 'byteperflow', 'tot_dur', 'flows', 'pktrate', 'tot_kbps']]
     return torch.tensor(feats.values).float()

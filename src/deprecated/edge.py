@@ -42,9 +42,7 @@ class EdgeLayer(nn.Module):
 
     def forward(self, g, node_features, edge_features):
         with g.local_scope():
-            edge_features = torch.cat([edge_features, torch.zeros([g.num_nodes(), 13])], 0)
-            g.add_nodes(len(node_features) - g.num_nodes())
-            g.ndata['h'] = node_features
+            #g.ndata['h'] = node_features
             g.edata['h'] = edge_features
             g.apply_edges(self.apply_edges)
             return g.edata['score']
