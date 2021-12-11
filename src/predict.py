@@ -10,19 +10,20 @@ import torch
 import numpy as np
 
 snap_size = 100               # number of edges in each snapshot
-n_hidden  = 15                # number of hidden representations
-n_out     = 10                # number of output features
+n_hidden  = 70                # number of hidden representations
+n_out     = 35                # number of output features
 encoding_method = 'Hadamard'  # refer Section 3.3 Edge Encoding in the Netwalk KDD paper
 embedder = 'SAGE'             # embedding models: NetWalk, GCN, SAGE, Rahmen, or Spectral
 optimizer = 'adam'            # optimizers:
 learning_rate = 0.01          # learning rate
 n_layers = 2                  # number of layers for network
-n_epochs = 20                 # number of training epochs
+n_epochs = 50                # number of training epochs
 
 train, test, n = process.import_dataset()
 mod = model.Model(n, n_hidden, n_out, embedder, encoding_method, n_layers, optimizer, learning_rate, n_epochs, train, test)
 mod.train()
 
+switchports = test[["switch","port_no"]]
 
 snapshotNum = 0
 snapshot = test.iloc[:snap_size]
@@ -41,6 +42,7 @@ with torch.no_grad():
         for item in snapshot['label'].tolist():
             y_true.append(item)
         snapshotNum = snapshotNum + 1
+
 num_true = int(sum(y_true))
 sorted_pred = sorted(y_pred)
 threshold = sorted_pred[-num_true]
@@ -49,6 +51,15 @@ y_pred = [
     1 if pred > threshold else 0
     for pred in y_pred
 ]
+
+anomalies = set()
+for i in range(len(y_pred)):
+    if y_pred[i] == 1:
+        anomalies.add(str(switchports.iloc[i]["switch"]) + " " + str(switchports.iloc[i]["port_no"]))
+
+for item in sorted(anomalies):
+    print("Anomalous port/switch pair: " + str(item))
+
 
 print("Accuracy: %.2f%%" % ((accuracy_score(y_true, y_pred, normalize=False)) / total * 100))
 print("AUC-ROC: " + str(roc_auc_score(y_true, y_pred)))

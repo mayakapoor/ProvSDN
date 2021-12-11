@@ -73,7 +73,7 @@ class NetWalk(nn.Module):
         netwalk = netwalk_update.NetWalk_update(data_zip, walk_per_node=number_walks, walk_len=walk_len,
                                 init_percent=ini_graph_percent, snap=snap)
 
-        self.model = MD.Model(activation, dimension, walk_len, n, gama, lamb, beta, rho,
+        self.model = MD.NWModel(activation, dimension, walk_len, n, gama, lamb, beta, rho,
                               epoch, batch_size, learning_rate, optimizer, corrupt_prob)
         self.stream = test_edges
 

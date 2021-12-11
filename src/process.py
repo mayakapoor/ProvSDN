@@ -36,13 +36,16 @@ def import_dataset():
     df_attack = df[df['label'] == 1]
 
     train, benign_test = train_test_split(df_benign)
-    train = train.sort_values(by='dt').reset_index(drop=True)
+    ##train, test = train_test_split(df)
+    ##train = train.sort_values(by='dt').reset_index(drop=True)
     test = pd.concat([df_attack, benign_test])
-    test = test.sort_values(by='dt').reset_index(drop=True)
+    ##test = test.sort_values(by='dt').reset_index(drop=True)
 
     print("Number of benign training edges: " + str(len(train)))
     print("Number of attack testing edges: " + str(len(df_attack)))
     print("Number of benign testing edges: " + str(len(benign_test)))
+    ##print("Number of training edges: " + str(len(train)))
+    ##print("Number of testing edges: " + str(len(test)))
 
     print(train)
     print(test)

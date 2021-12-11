@@ -10,7 +10,7 @@ class Cheb(nn.Module):
     def __init__(self, in_feats, h_feats, out_feats, n_layers):
         super(Cheb, self).__init__()
         self.in_feats = in_feats
-        self.out_feats = n_classes
+        self.out_feats = out_feats
         self.h_feats = h_feats
         self.n_layers = n_layers
         self.layer = ChebConv(h_feats, h_feats, 2)
@@ -22,7 +22,7 @@ class Cheb(nn.Module):
 
     def forward(self, g):
         l = self.n_layers
-        h = F.relu(self.layer(g, features))
+        h = F.relu(self.layer(g, self.node_feat()))
         while (l > 1):
             h = F.relu(self.layer(g, h))
             l = l - 1

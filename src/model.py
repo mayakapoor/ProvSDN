@@ -60,6 +60,7 @@ class Model(nn.Module):
             self.pred = BinaryClassifier(out_feat + 6)
         else:
             self.pred = BinaryClassifier(h_feat + 6)
+        self.pred = BinaryClassifier(6)
 
         """
         Optimizer
@@ -155,4 +156,5 @@ class Model(nn.Module):
 
         feats = data[['pktperflow', 'byteperflow', 'tot_dur', 'flows', 'pktrate', 'tot_kbps']].to_numpy()
         combined_feats = np.concatenate((codes, feats), axis=1)
+        return feats
         return combined_feats
